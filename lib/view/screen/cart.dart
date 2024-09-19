@@ -1,85 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shopping_cart/view/widgets/cartitem.dart';
-import 'package:shopping_cart/viewmodel/productVM.dart'; // Import your ProductsVM
+import 'package:shopping_cart/view/screen/OrderConfirmationScreen.dart';
+import 'package:shopping_cart/view/screen/orderform.dart';
+import 'package:shopping_cart/viewmodel/productVM.dart';
 
-class CartScreen extends StatefulWidget {
-  @override
-  _CartScreenState createState() => _CartScreenState();
-}
-
-class _CartScreenState extends State<CartScreen> {
-  // Function to remove a specific item from the cart
-  void removeItem(int index) {
-    Provider.of<ProductsVM>(context, listen: false).del(index);
-  }
-
-  // Function to clear all items from the cart
-  void clearAllItems() {
-    Provider.of<ProductsVM>(context, listen: false).clearAll();
-  }
-
+class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Size screenSize = MediaQuery.of(context).size;
-
-    // Get the cart items from the ProductsVM provider
-    var cartItems = Provider.of<ProductsVM>(context).lst;
+    final productsVM = Provider.of<ProductsVM>(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Cart'),
+        backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              // Clear all orders from the cart
+              productsVM.clearAll();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // List of cart items
           Expanded(
-            child: cartItems.isNotEmpty
-                ? ListView.builder(
-                    itemCount: cartItems.length,
+            child: productsVM.lst.isEmpty
+                ? Center(child: Text('No items in the cart'))
+                : ListView.builder(
+                    itemCount: productsVM.lst.length,
                     itemBuilder: (context, index) {
-                      var item = cartItems[index];
-                      return Dismissible(
-                        key: Key(item.name), // Unique key for each item
-                        direction: DismissDirection.horizontal, // Swipe left/right
-                        onDismissed: (direction) {
-                          // Remove the item when dismissed
-                          removeItem(index);
-                        },
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Icon(Icons.delete, color: Colors.white),
+                      final product = productsVM.lst[index];
+                      return ListTile(
+                        leading: Image.asset(
+                          product.image,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
                         ),
-                        child: CartItem(
-                          key: UniqueKey(),
-                          screenSize: screenSize,
-                          image: item.image,
-                          itemName: item.name,
-                          del: () => removeItem(index),
+                        title: Text(product.name),
+                        subtitle: Text('Quantity: ${product.quantity}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.remove),
+                              onPressed: () {
+                                productsVM.decrementQuantity(index);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.add),
+                              onPressed: () {
+                                productsVM.incrementQuantity(index);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                productsVM.del(index);
+                              },
+                            ),
+                          ],
                         ),
                       );
                     },
-                  )
-                : Center(child: Text("Your cart is empty!")), // Display if the cart is empty
+                  ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Check if the cart is empty before placing an order
+                      if (productsVM.lst.isEmpty) {
+                        // Show a message that the cart is empty
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Your cart is empty. Add items to proceed.'),
+                          ),
+                        );
+                        return;
+                      }
 
-          // Show Clear All button below the list of items
-          if (cartItems.isNotEmpty) // Only show if there are items in the cart
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: clearAllItems,
-                  child: Text(
-                    "Clear All",
-                    style: TextStyle(color: Colors.red, fontSize: 18),
+                      // Show order form dialog
+                      showDialog(
+                        context: context,
+                        builder: (context) => OrderForm(
+                          onOrderPlaced: () {
+                            // Clear the cart and show confirmation after order is placed
+                            productsVM.clearAll();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderConfirmationScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                    child: Text('Place Order'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      textStyle: TextStyle(fontSize: 18),
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    // Clear all items from the cart
+                    productsVM.clearAll();
+                  },
+                  child: Text('Clear All'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    textStyle: TextStyle(fontSize: 18),
+                  ),
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );

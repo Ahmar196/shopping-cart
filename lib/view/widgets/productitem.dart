@@ -8,16 +8,19 @@ class ProductItem extends StatelessWidget {
     required this.screenSize,
     required this.image,
     required this.itemName,
+    required this.isDarkMode,
   }) : super(key: key);
 
   final Size screenSize;
   final String image, itemName;
-
+ final bool isDarkMode;
   @override
   Widget build(BuildContext context) {
+    double imageSize = screenSize.height * 0.15; // Adjust size as needed
+
     return Container(
       margin: EdgeInsets.all(10),
-      height: screenSize.height * 0.2,
+      height: screenSize.height * 0.25,
       width: screenSize.width * 0.3,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -31,48 +34,83 @@ class ProductItem extends StatelessWidget {
           )
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            // Add CachedNetworkImage logic or any other image widget
-          ),
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Text(itemName),
-          ),
-          Consumer<ProductsVM>(
-            builder: (context, value, child) {
-              bool isAdded = value.isAlreadyAdded(itemName);
-              return InkWell(
-                onTap: () {
-                  if (!isAdded) {
-                    value.add(image, itemName);
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(2.0),
-                  child: Container(
-                    height: screenSize.height * 0.03,
-                    width: screenSize.width * 0.15,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: isAdded ? Colors.blue : Colors.blue,
-                    ),
-                    child: Center(
-                      child: Text(
-                        isAdded ? "Added" : "ADD",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  width: imageSize,
+                  height: imageSize,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.asset(
+                      image,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Text(
+                  itemName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.black : Colors.black,
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+              Consumer<ProductsVM>(
+                builder: (context, value, child) {
+                  bool isAddedToCart = value.isAlreadyAdded(itemName);
+
+                  return ElevatedButton(
+                    onPressed: () {
+                      if (isAddedToCart) {
+                        value.removeFromCart(itemName); // Remove if already added
+                      } else {
+                        value.add(image, itemName); // Add to cart
+                      }
+                    },
+                    child: Text(isAddedToCart ? "Added" : "Add to Cart"),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: isAddedToCart ? Colors.blue : Colors.blue, // Change color for "Added"
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Consumer<ProductsVM>(
+              builder: (context, value, child) {
+                bool isInWishlist = value.isInWishlist(itemName);
+
+                return IconButton(
+                  icon: Icon(
+                    isInWishlist ? Icons.favorite : Icons.favorite_border,
+                    color: isInWishlist ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: () {
+                    if (isInWishlist) {
+                      value.removeFromWishlist(itemName); // Remove from wishlist
+                    } else {
+                      value.addToWishlist(image, itemName); // Add to wishlist
+                    }
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
