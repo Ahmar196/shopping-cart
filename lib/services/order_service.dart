@@ -1,54 +1,46 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 import 'package:shopping_cart/model/order_model.dart';
 
 class OrderService {
-  Future<void> placeOrder(Order order) async {
-    final prefs = await SharedPreferences.getInstance();
-    final orderCount = prefs.getInt('orderCount') ?? 0;
-
-    await prefs.setString('orderName_$orderCount', order.name);
-    await prefs.setString('orderSize_$orderCount', order.size);
-    await prefs.setString('orderAddress_$orderCount', order.address);
-    await prefs.setDouble('orderTotalPrice_$orderCount', order.totalPrice);
-    await prefs.setString('orderDate_$orderCount', order.orderDate.toIso8601String());
-
-    await prefs.setInt('orderCount', orderCount + 1);
-  }
+  // Other existing methods...
 
   Future<List<Map<String, dynamic>>> getOrders() async {
     final prefs = await SharedPreferences.getInstance();
-    final orderCount = prefs.getInt('orderCount') ?? 0;
+    final ordersJson = prefs.getString('orders') ?? '[]';
+    final List<dynamic> ordersList = jsonDecode(ordersJson);
+    return ordersList.cast<Map<String, dynamic>>(); // Cast to List<Map<String, dynamic>>
+  }
 
-    List<Map<String, dynamic>> orders = [];
-    for (int i = 0; i < orderCount; i++) {
-      final name = prefs.getString('orderName_$i') ?? 'Unknown';
-      final size = prefs.getString('orderSize_$i') ?? 'Unknown';
-      final address = prefs.getString('orderAddress_$i') ?? 'Unknown';
-      final totalPrice = prefs.getDouble('orderTotalPrice_$i') ?? 0.0;
+  Future<void> placeOrder(Order order) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ordersJson = prefs.getString('orders') ?? '[]';
+    final List<dynamic> ordersList = jsonDecode(ordersJson);
+    ordersList.add(order.toJson()); // Assuming Order class has a toJson() method
+    await prefs.setString('orders', jsonEncode(ordersList));
+  }
 
-      orders.add({
-        'name': name,
-        'size': size,
-        'address': address,
-        'totalPrice': totalPrice,
-      });
+  Future<int> getTotalOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ordersJson = prefs.getString('orders') ?? '[]';
+    final List<dynamic> ordersList = jsonDecode(ordersJson);
+    return ordersList.length;
+  }
+
+  Future<double> getTotalRevenue() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ordersJson = prefs.getString('orders') ?? '[]';
+    final List<dynamic> ordersList = jsonDecode(ordersJson);
+    double totalRevenue = 0.0;
+    for (var order in ordersList) {
+      totalRevenue += (order['totalPrice'] ?? 0.0);
     }
-
-    return orders;
+    return totalRevenue;
   }
 
   Future<void> clearOrders() async {
     final prefs = await SharedPreferences.getInstance();
-    final orderCount = prefs.getInt('orderCount') ?? 0;
-
-    for (int i = 0; i < orderCount; i++) {
-      await prefs.remove('orderName_$i');
-      await prefs.remove('orderSize_$i');
-      await prefs.remove('orderAddress_$i');
-      await prefs.remove('orderTotalPrice_$i');
-      await prefs.remove('orderDate_$i');
-    }
-
-    await prefs.remove('orderCount');
+    await prefs.remove('orders');
   }
 }

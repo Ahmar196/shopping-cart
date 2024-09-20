@@ -1,6 +1,3 @@
-// lib/model/order_model.dart
-import 'dart:convert';
-
 class Order {
   final List<Map<String, dynamic>> items;
   final double totalPrice;
@@ -18,29 +15,12 @@ class Order {
     required this.address,
   });
 
-  // Convert order to JSON
-  String toJson() {
-    final orderMap = {
-      'items': items,
-      'totalPrice': totalPrice,
-      'orderDate': orderDate.toIso8601String(),
-      'name': name,
-      'size': size,
-      'address': address,
-    };
-    return orderMap.toString();
-  }
-
-  // Create an Order from JSON
-  static Order fromJson(String json) {
-    final orderMap = Map<String, dynamic>.from(jsonDecode(json));
-    return Order(
-      items: List<Map<String, dynamic>>.from(orderMap['items']),
-      totalPrice: orderMap['totalPrice'],
-      orderDate: DateTime.parse(orderMap['orderDate']),
-      name: orderMap['name'],
-      size: orderMap['size'],
-      address: orderMap['address'],
-    );
-  }
+  Map<String, dynamic> toJson() => {
+    'items': items,
+    'totalPrice': totalPrice,
+    'orderDate': orderDate.toIso8601String(),
+    'name': name,
+    'size': size,
+    'address': address,
+  };
 }

@@ -1,4 +1,3 @@
-// lib/view/screen/product_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_cart/view/screen/myorderscreen.dart';
@@ -8,7 +7,7 @@ import 'package:shopping_cart/view/widgets/wishcounter.dart';
 import 'package:shopping_cart/viewmodel/productVM.dart';
 import 'package:shopping_cart/view/screen/cart.dart';
 import 'package:shopping_cart/view/screen/wallet.dart';
-import 'package:shopping_cart/view/screen/profile.dart';
+import 'package:shopping_cart/view/screen/dashboard.dart';
 import 'package:shopping_cart/view/screen/wishlist.dart'; // Import WishlistScreen
 
 import 'package:shopping_cart/viewmodel/themeprovider.dart';
@@ -31,105 +30,118 @@ class _ProductScreenState extends State<ProductScreen> {
     final isDarkMode = themeProvider.isDarkMode;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: isDarkMode ? Colors.black : Colors.blue, // Change based on dark mode
-        toolbarHeight: 50,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.brightness_6),
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-          ),
-          InkWell(
-            onTap: () {
-              // Navigate to CartScreen
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => CartScreen()));
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: 0, right: 15, top: 8, bottom: 8),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 25),
-                  ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Consumer<ProductsVM>(
-                      builder: (context, value, child) => CartCounter(
-                        count: value.lst.length.toString(),
-                        key: UniqueKey(),
-                      ),
+      // Show AppBar only if the selected page is the ProductScreen (index == 0)
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              backgroundColor: isDarkMode ? Colors.black : Colors.blue, // Change based on dark mode
+              toolbarHeight: 50,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.brightness_6),
+                  onPressed: () {
+                    Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                  },
+                ),
+                InkWell(
+                  onTap: () {
+                    // Navigate to CartScreen
+                    Navigator.push(
+                        context, MaterialPageRoute(builder: (context) => CartScreen()));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 0, right: 15, top: 8, bottom: 8),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 25),
+                        ),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Consumer<ProductsVM>(
+                            builder: (context, value, child) => CartCounter(
+                              count: value.lst.length.toString(),
+                              key: UniqueKey(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: () {
-              // Navigate to WishlistScreen
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => WishlistScreen()));
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: 0, right: 15, top: 8, bottom: 8),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Consumer<ProductsVM>(
-                      builder: (context, value, child) => Icon(
-                        Icons.favorite_border,
-                        color: value.wishlist.length > 0 ? Colors.red : Colors.white, // Change color based on wishlist count
-                        size: 25,
-                      ),
+                ),
+                InkWell(
+                  onTap: () {
+                    // Navigate to WishlistScreen
+                    Navigator.push(
+                        context, MaterialPageRoute(builder: (context) => WishlistScreen()));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 0, right: 15, top: 8, bottom: 8),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Consumer<ProductsVM>(
+                            builder: (context, value, child) => Icon(
+                              Icons.favorite_border,
+                              color: value.wishlist.length > 0 ? Colors.red : Colors.white,
+                              size: 25,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Consumer<ProductsVM>(
+                            builder: (context, value, child) => Wishcounter(
+                              count: value.wishlist.length.toString(),
+                              key: UniqueKey(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Consumer<ProductsVM>(
-                      builder: (context, value, child) => Wishcounter(
-                        count: value.wishlist.length.toString(),
-                        key: UniqueKey(),
-                      ),
+                ),
+              ],
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'myOrders') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => OrderServiceScreen()),
+                      );
+                    } else if (value == 'dashboard') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => DashboardScreen()),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'myOrders',
+                      child: Text('My Orders'),
                     ),
-                  ),
-                ],
+                    PopupMenuItem(
+                      value: 'dashboard',
+                      child: Text('Dashboard'),
+                    ),
+                  ],
+                  child: Icon(Icons.menu_rounded, color: Colors.white, size: 25),
+                ),
               ),
-            ),
-          ),
-        ],
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'myOrders') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => OrderServiceScreen()),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'myOrders',
-                child: Text('My Orders'),
+              title: Center(
+                child: Text("My Mart", style: TextStyle(color: Colors.white)),
               ),
-            ],
-            child: Icon(Icons.menu_rounded, color: Colors.white, size: 25),
-          ),
-        ),
-        title: Center(
-          child: Text("My Mart", style: TextStyle(color: Colors.white)),
-        ),
-      ),
+            )
+          : null, // No AppBar on other screens
+
       body: SafeArea(
         child: PageView(
           controller: _pageController,
@@ -149,13 +161,13 @@ class _ProductScreenState extends State<ProductScreen> {
                   screenSize: screenSize,
                   image: prds[index]["image"] ?? '',
                   itemName: prds[index]["name"] ?? '',
-                  isDarkMode: isDarkMode, // Pass dark mode state to ProductItem
+                  isDarkMode: isDarkMode,
                 ),
               ),
             ),
             CartScreen(), // Add CartScreen here
             WalletScreen(), // Add WalletScreen here
-            ProfileScreen(), // Add ProfileScreen here
+            DashboardScreen(), // Add DashboardScreen here
           ],
         ),
       ),
@@ -184,8 +196,8 @@ class _ProductScreenState extends State<ProductScreen> {
             label: 'Wallet',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
           ),
         ],
       ),
