@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_cart/viewmodel/productVM.dart';
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class ProductItem extends StatelessWidget {
   const ProductItem({
@@ -13,10 +14,12 @@ class ProductItem extends StatelessWidget {
 
   final Size screenSize;
   final String image, itemName;
- final bool isDarkMode;
+  final bool isDarkMode;
+
   @override
   Widget build(BuildContext context) {
     double imageSize = screenSize.height * 0.15; // Adjust size as needed
+    final GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>(); // Global key for animation
 
     return Container(
       margin: EdgeInsets.all(10),
@@ -31,7 +34,7 @@ class ProductItem extends StatelessWidget {
             offset: Offset(0, 0),
             blurRadius: 3,
             spreadRadius: 3,
-          )
+          ),
         ],
       ),
       child: Stack(
@@ -59,40 +62,17 @@ class ProductItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.black : Colors.black,
+                    color: isDarkMode ? Colors.black : Colors.black,
                   ),
                 ),
               ),
               SizedBox(height: 8),
-              Consumer<ProductsVM>(
-                builder: (context, value, child) {
-                  bool isAddedToCart = value.isAlreadyAdded(itemName);
-
-                  return ElevatedButton(
-                    onPressed: () {
-                      if (isAddedToCart) {
-                        value.removeFromCart(itemName); // Remove if already added
-                      } else {
-                        value.add(image, itemName); // Add to cart
-                      }
-                    },
-                    child: Text(isAddedToCart ? "Added" : "Add to Cart"),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: isAddedToCart ? Colors.blue : Colors.blue, // Change color for "Added"
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                  );
-                },
-              ),
             ],
           ),
           Positioned(
             right: 0,
             top: 0,
-            child: Consumer<ProductsVM>(
+            child: Consumer<ProductsVM>( // Wishlist icon
               builder: (context, value, child) {
                 bool isInWishlist = value.isInWishlist(itemName);
 
@@ -108,6 +88,49 @@ class ProductItem extends StatelessWidget {
                       value.addToWishlist(image, itemName); // Add to wishlist
                     }
                   },
+                );
+              },
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0, // Positioning the cart icon below the wishlist icon
+            child: Consumer<ProductsVM>( // Cart icon with animation
+              builder: (context, value, child) {
+                bool isAddedToCart = value.isAlreadyAdded(itemName);
+
+                return AddToCartAnimation(
+                  cartKey: cartKey,
+                  createAddToCartAnimation: (context) {
+                    return IconButton(
+                      key: cartKey,
+                      icon: Icon(
+                        Icons.shopping_cart,
+                        color: isAddedToCart ? Colors.blue : Colors.grey,
+                      ),
+                      onPressed: () {
+                        if (isAddedToCart) {
+                          value.removeFromCart(itemName); // Remove if already added
+                        } else {
+                          value.add(image, itemName); // Add to cart
+                        }
+                      },
+                    );
+                  },
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.shopping_cart,
+                      color: isAddedToCart ? Colors.blue : Colors.grey,
+                    ),
+                    onPressed: () {
+                      // Trigger the add to cart animation
+                      if (isAddedToCart) {
+                        value.removeFromCart(itemName); // Remove if already added
+                      } else {
+                        value.add(image, itemName); // Add to cart
+                      }
+                    },
+                  ),
                 );
               },
             ),
